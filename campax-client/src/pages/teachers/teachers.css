@@ -1,0 +1,45 @@
+.teacher-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.teacher-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.teacher-name-cell .name {
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.teacher-name-cell .username {
+    font-size: var(--font-size-xs);
+    color: var(--gray-400);
+}
+
+.subject-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.subject-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    cursor: pointer;
+}

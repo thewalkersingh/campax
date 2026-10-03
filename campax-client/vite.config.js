@@ -1,10 +1,28 @@
-// vite.config.js
-// Overwrites the default file the Vite CLI generates - just adds the
-// Tailwind v4 plugin alongside the existing React plugin.
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import { fileURLToPath, URL } from "url";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
+  },
 });
+
+// VITE_API_BASE_URL=https://campax-server.onrender.com
+
+
+//  npm run dev --host
+//  172.24.176.1:5173
+//  http://172.24.176.1:5173/
