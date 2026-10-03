@@ -1,34 +1,21 @@
-version: '3.8'
-
 services:
-  campax-server:
+  campax-api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: campax-server
     ports:
-      - "8081:8080"
+      # Host port is configurable so it can't clash with other projects on 8080
+      - "${HOST_PORT:-8081}:8080"
+    env_file:
+      - .env
     environment:
-      # Database
-      DB_URL: ${DB_URL}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-
-      # JWT
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_ACCESS_EXPIRY: 900000
-      JWT_REFRESH_EXPIRY: 604800000
-
-      # Mail
-      MAIL_HOST: smtp.sendgrid.net
-      MAIL_PORT: 587
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-
-      # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS}
-
-      # Profile
-      SPRING_PROFILES_ACTIVE: prod
-
+      # Fixed inside the container; overrides anything PORT-related in .env
+      PORT: 8080
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s

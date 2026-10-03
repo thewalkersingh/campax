@@ -21,3 +21,52 @@ spring:
     default-property-inclusion: non_null
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: UTC
+
+
+  mail:
+    host: ${MAIL_HOST:smtp.sendgrid.net}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:apikey}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# ── JWT (secret is defined per profile) ──────────────────────────────────────
+jwt:
+  access-token-expiry: ${JWT_ACCESS_EXPIRY:900000}       # 15 min
+  refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000}  # 7 days
+
+# ── Twilio ───────────────────────────────────────────────────────────────────
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  phone-number: ${TWILIO_PHONE_NUMBER:}
+  enabled: ${TWILIO_ENABLED:false}
+
+# ── OTP ──────────────────────────────────────────────────────────────────────
+otp:
+  expiry-minutes: 5
+  length: 6
+
+# ── CORS (comma-separated list of allowed origins) ───────────────────────────
+cors:
+  allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+
+# ── Actuator ─────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+  health:
+    # An unreachable SMTP server must not mark the whole app as DOWN
+    mail:
+      enabled: false

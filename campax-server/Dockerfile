@@ -16,11 +16,18 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copy jar from build stage
-COPY --from=builder /app/target/*.jar app.jar
+# Run as a non-root user
+RUN addgroup -S campax && adduser -S campax -G campax
 
-# Expose port
+COPY --from=builder /app/target/*.jar app.jar
+RUN chown campax:campax app.jar
+USER campax
+
+# Defaults; override at runtime (Render dashboard / docker compose)
+ENV SPRING_PROFILES_ACTIVE=prod \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+
+# Render injects PORT at runtime; the app reads it via server.port=${PORT:8080}
 EXPOSE 8080
 
-# Run with prod profile
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

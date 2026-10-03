@@ -1,4 +1,4 @@
-# Maven
+# Build output
 target/
 *.jar
 
@@ -11,12 +11,14 @@ target/
 .git/
 .gitignore
 
-# Environment files — never in Docker image
+# Secrets / local env — never bake into the image
 .env
-.env.dev
-.env.prod
-application-dev.yaml
-application-prod.yaml
+.env.*
+!.env.example
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
 
 # OS
 .DS_Store
