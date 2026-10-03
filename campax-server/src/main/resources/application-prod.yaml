@@ -1,23 +1,78 @@
+server:
+  port: ${PORT:8080}
+  tomcat:
+    threads:
+      max: 200
+    connection-timeout: 20000
+
 spring:
   datasource:
-    url: ${DB_URL}                      # Set in Koyeb/Render Environment
-    username: ${DB_USERNAME}            # Set in Koyeb/Render Environment
-    password: ${DB_PASSWORD}            # Set in Koyeb/Render Environment
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 10
-      connection-timeout: 30000
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN:5}
+      connection-timeout: 20000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000   # Log leaked connections after 60 s
+
   jpa:
     hibernate:
-      ddl-auto: validate                # Let Flyway manage schema in prod
+      ddl-auto: validate              # 🔴 NEVER use update / create-drop in prod
     show-sql: false
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-server:
-  port: ${PORT:8080}                    # Render/Koyeb assign a dynamic PORT
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+
+  # ── Mail (prod) ────────────────────────────────────────────────────────────
+  mail:
+    host: ${MAIL_HOST:smtp.sendgrid.net}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:apikey}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# ── JWT ──────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiry: ${JWT_ACCESS_EXPIRY:900000}       # 15 min
+  refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000}  # 7 days
+
+# ── CORS ─────────────────────────────────────────────────────────────────────
+cors:
+  allowed-origins: ${CORS_ORIGINS}
+
+# ── Swagger / OpenAPI (disabled in prod) ─────────────────────────────────────
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# ── Actuator (lightweight health & metrics) ──────────────────────────────────
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# ── Logging ──────────────────────────────────────────────────────────────────
 logging:
   level:
-    root: INFO
-    com.schoolnest: DEBUG
+    root: WARN
+    com.skooly: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN

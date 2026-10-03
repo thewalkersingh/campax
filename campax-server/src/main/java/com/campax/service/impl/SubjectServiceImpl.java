@@ -1,0 +1,191 @@
+package com.campax.service.impl;
+
+import com.campax.dto.request.SubjectRequest;
+import com.campax.dto.response.SubjectResponse;
+import com.campax.entity.Subject;
+import com.campax.entity.Teacher;
+import com.campax.enums.SubjectStatus;
+import com.campax.exception.ResourceNotFoundException;
+import com.campax.mapper.SubjectMapper;
+import com.campax.repository.SubjectRepository;
+import com.campax.repository.TeacherRepository;
+import com.campax.service.SubjectService;
+import com.campax.wrapper.PageResponse;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class SubjectServiceImpl implements SubjectService {
+	
+	private final SubjectRepository subjectRepository;
+	private final SubjectMapper subjectMapper;
+	private final TeacherRepository teacherRepository;
+	
+	// ── Create / Update / Delete ──────────────────────────────────────────────
+	public SubjectResponse createSubject(SubjectRequest request) {
+		Subject subject = subjectMapper.toEntity(request);
+		subject = subjectRepository.save(subject);
+		return subjectMapper.toResponse(subject);
+	}
+	
+	public SubjectResponse updateSubject(Long subjectId, SubjectRequest request) {
+		subjectRepository.findById(subjectId)
+			.orElseThrow(() -> new RuntimeException("Subject not found"));
+		Subject subject = subjectMapper.toEntity(request);
+		Subject response = subjectRepository.save(subject);
+		return subjectMapper.toResponse(response);
+	}
+	
+	public void deleteSubject(Long subjectId) {
+		subjectRepository.findById(subjectId)
+			.orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+		subjectRepository.deleteById(subjectId);
+	}
+	
+	// ── Single fetch ──────────────────────────────────────────────────────────
+	public SubjectResponse getSubject(Long id) {
+		return subjectRepository.findById(id)
+			       .map(subjectMapper::toResponse)
+			       .orElseThrow(() -> new RuntimeException("Subject not found"));
+	}
+	
+	public SubjectResponse getSubjectByCode(String subjectCode) {
+		Subject response = subjectRepository.findBySubjectCode(subjectCode)
+			                   .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+		return subjectMapper.toResponse(response);
+		
+	}
+	
+	public SubjectResponse getSubjectWithTeachers(Long subjectId) {
+		Subject subject = subjectRepository.findSubjectsByIdWithTeachers(subjectId)
+			                  .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+		return subjectMapper.toResponse(subject);
+	}
+	
+	// ── Lists ─────────────────────────────────────────────────────────────────
+	public PageResponse<SubjectResponse> getAllSubjects(Pageable pageable) {
+		Page<Subject> page = subjectRepository.findAll(pageable);
+		List<SubjectResponse> list = page.getContent().stream().map(subjectMapper::toResponse).toList();
+		return PageResponse.<SubjectResponse>builder()
+			       .data(list)
+			       .page(page.getNumber())
+			       .size(page.getSize())
+			       .totalElements(page.getTotalElements())
+			       .totalPages(page.getTotalPages())
+			       .hasNext(page.hasNext())
+			       .hasPrevious(page.hasPrevious())
+			       .build();
+	}
+	
+	public PageResponse<SubjectResponse> getSubjectsByStatus(SubjectStatus status, Pageable pageable) {
+		
+		Page<Subject> page = subjectRepository.findBySubjectStatus(status, pageable);
+		List<SubjectResponse> list = page.getContent().stream().map(subjectMapper::toResponse).toList();
+		return PageResponse.<SubjectResponse>builder()
+			       .data(list)
+			       .page(page.getNumber())
+			       .size(page.getSize())
+			       .totalElements(page.getTotalElements())
+			       .totalPages(page.getTotalPages())
+			       .hasNext(page.hasNext())
+			       .hasPrevious(page.hasPrevious())
+			       .build();
+		
+	}
+	
+	public List<SubjectResponse> getSubjectsBySection(Long sectionId) {
+		List<Subject> list = subjectRepository.findBySectionId(sectionId);
+		return list.stream().map(subjectMapper::toResponse).toList();
+	}
+	
+	public List<SubjectResponse> getSubjectsByTeacher(Long teacherId) {
+		List<Subject> list = subjectRepository.findByTeacherId(teacherId);
+		return list.stream().map(subjectMapper::toResponse).toList();
+	}
+	
+	// ── Search ────────────────────────────────────────────────────────────────
+	public PageResponse<SubjectResponse> searchSubjectsByName(String name, Pageable pageable) {
+		Page<Subject> page = subjectRepository.findBySubjectNameContainingIgnoreCase(name, pageable);
+		List<SubjectResponse> list = page.getContent().stream().map(subjectMapper::toResponse).toList();
+		return PageResponse.<SubjectResponse>builder()
+			       .data(list)
+			       .page(page.getNumber())
+			       .size(page.getSize())
+			       .totalElements(page.getTotalElements())
+			       .totalPages(page.getTotalPages())
+			       .hasNext(page.hasNext())
+			       .hasPrevious(page.hasPrevious())
+			       .build();
+	}
+	
+	// ── Status management ─────────────────────────────────────────────────────
+	public SubjectResponse updateStatus(Long subjectId, SubjectStatus status) {
+		Subject subject = subjectRepository.findById(subjectId)
+			                  .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+		subject.setSubjectStatus(status);
+		subjectRepository.save(subject);
+		return subjectMapper.toResponse(subject);
+	}
+	
+	// ── Teacher assignment ────────────────────────────────────────────────────
+	public SubjectResponse assignTeacher(Long subjectId, Long teacherId) {
+		Subject subject = subjectRepository.findSubjectsByIdWithTeachers(subjectId)
+			                  .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+		Teacher teacher = teacherRepository.findById(teacherId)
+			                  .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
+		// Guard — avoid duplicate entry in subject_teachers join table
+		boolean alreadyAssigned = subject.getTeachers()
+			                          .stream().anyMatch(t -> t.getId().equals(teacherId));
+		if (alreadyAssigned) {
+			throw new IllegalStateException("Teacher already assigned to this subject");
+		}
+		subject.getTeachers().add(teacher);
+		Subject saved = subjectRepository.save(subject);
+		return subjectMapper.toResponse(saved);
+	}
+	
+	public SubjectResponse removeTeacher(Long subjectId, Long teacherId) {
+		Subject subject = subjectRepository.findSubjectsByIdWithTeachers(subjectId)
+			                  .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
+		
+		boolean exists = subject.getTeachers()
+			                 .stream()
+			                 .anyMatch(t -> t.getId().equals(teacherId));
+		
+		if (!exists) {
+			throw new ResourceNotFoundException("Teacher not assigned to this subject");
+		}
+		
+		subject.getTeachers().removeIf(t -> t.getId().equals(teacherId));
+		Subject saved = subjectRepository.save(subject);
+		return subjectMapper.toResponse(saved);
+	}
+	
+	// ── Assignment utilities ──────────────────────────────────────────────────
+	public List<SubjectResponse> getSubjectsNotInSection(Long sectionId) {
+		List<Subject> list = subjectRepository.findSubjectsNotInSection(sectionId);
+		return list.stream().map(subjectMapper::toResponse).toList();
+	}
+	
+	public List<SubjectResponse> getSubjectsNotAssignedToTeacher(Long teacherId) {
+		List<Subject> list = subjectRepository.findSubjectsNotAssignedToTeacher(teacherId);
+		return list.stream().map(subjectMapper::toResponse).toList();
+	}
+	
+	private boolean existsBySubjectCode(String subjectCode) {
+		return subjectRepository.existsBySubjectCode(subjectCode);
+	}
+	
+	private List<Subject> findByStatus(SubjectStatus status) {
+		
+		return subjectRepository.findBySubjectStatus(status);
+	}
+	
+}

@@ -1,0 +1,34 @@
+package com.campax.dto.response.auth;
+
+import com.campax.enums.UserRole;
+import com.campax.enums.UserStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+// ── LoginResponse ─────────────────────────────────────────────────────────────
+// Returned after successful login OR token refresh
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class LoginResponse {
+	
+	private String accessToken;
+	private String refreshToken;
+	private String tokenType;           // always "Bearer"
+	private long accessTokenExpiresIn;  // milliseconds
+	
+	// User info — so frontend doesn't need a separate /me call after login
+	private Long userId;
+	private String firstName;
+	private String lastName;
+	private UserRole userRole;
+	private UserStatus userStatus;
+	private Long roleEntityId;          // teacherId / studentId etc
+	private boolean firstLogin;         // true → redirect to set-password page
+	private String message;
+	
+}

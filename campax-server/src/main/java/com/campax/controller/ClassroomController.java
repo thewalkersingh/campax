@@ -1,0 +1,155 @@
+package com.campax.controller;
+
+import com.campax.dto.request.ClassroomRequest;
+import com.campax.dto.response.ClassroomResponse;
+import com.campax.enums.ClassroomStatus;
+import com.campax.service.ClassroomService;
+import com.campax.wrapper.ApiResponse;
+import com.campax.wrapper.PageResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@Slf4j
+@RestController
+@RequestMapping("/v1/classrooms")
+@RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
+public class ClassroomController {
+	
+	private final ClassroomService classroomService;
+	
+	// ── Create / Update / Delete ──────────────────────────────────────────────
+	@PostMapping("/{schoolId}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ApiResponse<ClassroomResponse> createClassroom(@PathVariable Long schoolId,
+		@RequestBody ClassroomRequest request) {
+		log.info("Creating classroom with id {}", schoolId);
+		ClassroomResponse response = classroomService.createClassroom(schoolId, request);
+		return ApiResponse
+					 .<ClassroomResponse>builder()
+					 .success(true)
+					 .message("Classroom created successfully")
+					 .data(response)
+					 .statusCode(201)
+					 .build();
+	}
+	
+	@PutMapping("/{classroomId}/request")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ApiResponse<ClassroomResponse> updateClassroom(@PathVariable Long classroomId,
+		@RequestBody ClassroomRequest request) {
+		log.info("Updating classroom with id {}", classroomId);
+		ClassroomResponse response = classroomService.updateClassroom(classroomId, request);
+		return ApiResponse
+					 .<ClassroomResponse>builder()
+					 .data(response)
+					 .message("Classroom updated for ID: " + classroomId)
+					 .success(true)
+					 .statusCode(200)
+					 .build();
+	}
+	
+	@DeleteMapping("/delete/{classroomId}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ApiResponse<String> deleteClassroom(@PathVariable Long classroomId) {
+		log.info("Deleting classroom with id {}", classroomId);
+		classroomService.deleteClassroom(classroomId);
+		return ApiResponse
+					 .<String>builder()
+					 .data("Classroom deleted for ID: " + classroomId)
+					 .message("Classroom deleted successfully")
+					 .statusCode(200)
+					 .success(true)
+					 .build();
+	}
+	
+	// ── Single fetch ──────────────────────────────────────────────────────────
+	@GetMapping("/id/{classroomId}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STAFF')")
+	public ApiResponse<ClassroomResponse> getClassroom(@PathVariable Long classroomId) {
+		log.info("Fetching classroom with id {}", classroomId);
+		ClassroomResponse response = classroomService.getClassroom(classroomId);
+		return ApiResponse
+					 .<ClassroomResponse>builder()
+					 .success(true)
+					 .message("Classroom fetched successfully")
+					 .data(response)
+					 .build();
+	}
+	
+	// or we can use this mapping -> GET /classrooms/code/{classroomCode}
+	@GetMapping("/code/{classroomCode}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STAFF')")
+	public ApiResponse<ClassroomResponse> getClassroomByCode(@PathVariable String classroomCode) {
+		log.info("Fetching classroom by code: {}", classroomCode);
+		ClassroomResponse response = classroomService.getClassroomByCode(classroomCode);
+		return ApiResponse.<ClassroomResponse>builder()
+								.data(response)
+								.message("Classroom fetched for ClassCode: " + classroomCode)
+								.success(true)
+								.statusCode(200)
+								.build();
+	}
+	
+	// ── Lists ─────────────────────────────────────────────────────────────────
+	@GetMapping("/all")
+	@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STAFF')")
+	public ApiResponse<PageResponse<ClassroomResponse>> getAllClassrooms(Pageable pageable) {
+		log.info("Fetching all classrooms");
+		PageResponse<ClassroomResponse> response = classroomService.getAllClassrooms(pageable);
+		return ApiResponse
+					 .<PageResponse<ClassroomResponse>>builder()
+					 .success(true)
+					 .message("Classrooms fetched successfully")
+					 .data(response)
+					 .build();
+	}
+	
+	@GetMapping("/school/{schoolId}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STAFF')")
+	public ApiResponse<PageResponse<ClassroomResponse>> getClassroomsBySchool(@PathVariable Long schoolId,
+		Pageable pageable) {
+		log.info("Fetching classrooms for school with id {}", schoolId);
+		PageResponse<ClassroomResponse> response = classroomService.getClassroomsBySchool(schoolId, pageable);
+		return ApiResponse.<PageResponse<ClassroomResponse>>builder()
+								.data(response)
+								.message("Classroom fetched successfully for School ID: " + schoolId)
+								.success(true)
+								.statusCode(200)
+								.build();
+	}
+	
+	@GetMapping("/school/{schoolId}/status/{status}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STAFF')")
+	public ApiResponse<PageResponse<ClassroomResponse>> getClassroomsBySchoolAndStatus(@PathVariable Long schoolId,
+		@PathVariable ClassroomStatus status, Pageable pageable) {
+		log.info("Fetching classrooms for school ID: {} and Status: {}", schoolId, status);
+		PageResponse<ClassroomResponse> response = classroomService
+																	 .getClassroomsBySchoolAndStatus(schoolId, status, pageable);
+		return ApiResponse.<PageResponse<ClassroomResponse>>builder()
+								.data(response)
+								.message("Classroom Fetched successfully for school ID: " + schoolId + " and Status: " + status)
+								.success(true)
+								.statusCode(200)
+								.build();
+	}
+	
+	// ── Status management ─────────────────────────────────────────────────────
+	@PatchMapping("/{classroomId}/status/{status}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ApiResponse<ClassroomResponse> updateStatus(@PathVariable Long classroomId,
+		@PathVariable ClassroomStatus status) {
+		log.info("Updating status for classroom with id {}", classroomId);
+		ClassroomResponse response = classroomService.updateStatus(classroomId, status);
+		return ApiResponse.<ClassroomResponse>builder()
+								.data(response)
+								.message("Classroom Status Updated for ID: " + classroomId)
+								.success(true)
+								.statusCode(200)
+								.build();
+	}
+	
+}

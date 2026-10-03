@@ -1,0 +1,55 @@
+package com.campax.service;
+
+import com.campax.dto.request.TeacherRequest;
+import com.campax.dto.response.SectionResponse;
+import com.campax.dto.response.TeacherResponse;
+import com.campax.enums.TeacherStatus;
+import com.campax.wrapper.PageResponse;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+
+public interface TeacherService {
+	
+	// ── Create / Update / Delete ──────────────────────────────────────────────
+	TeacherResponse createTeacher(Long schoolId, TeacherRequest request);
+	
+	TeacherResponse updateTeacher(Long teacherId, TeacherRequest request);
+	
+	void deleteTeacher(Long teacherId);
+	
+	// ── Single fetch ──────────────────────────────────────────────────────────
+	TeacherResponse getTeacher(Long teacherId);
+	
+	TeacherResponse getTeacherByPhone(String phone);
+	
+	TeacherResponse getTeacherByEmail(String email);
+	
+	// Class teacher of a specific section
+	TeacherResponse getClassTeacherBySection(Long sectionId);
+	
+	// ── Lists ─────────────────────────────────────────────────────────────────
+	PageResponse<TeacherResponse> getAllTeachers(Pageable pageable);
+	
+	PageResponse<TeacherResponse> getTeachersBySchool(Long schoolId, Pageable pageable);
+	
+	PageResponse<TeacherResponse> getTeachersBySchoolAndStatus(Long schoolId, TeacherStatus teacherStatus,
+		Pageable pageable);
+	
+	// Teachers assigned to a specific subject
+	List<TeacherResponse> getTeachersBySubject(Long subjectId);
+	
+	// ── Search ────────────────────────────────────────────────────────────────
+	PageResponse<TeacherResponse> searchTeachersByName(Long schoolId, String name, Pageable pageable);
+	
+	// ── Status management ─────────────────────────────────────────────────────
+	TeacherResponse updateStatus(Long teacherId, TeacherStatus teacherStatus);
+	
+	// ── Unassigned teachers (admin utility) ───────────────────────────────────
+	// Returns active teachers not yet assigned as class teacher to any section
+	List<TeacherResponse> getUnassignedTeachers(Long schoolId);
+	
+	// Sections where this teacher is class teacher
+	List<SectionResponse> getSectionsByTeacher(Long teacherId);
+	
+}

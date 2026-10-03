@@ -1,0 +1,5 @@
+package com.campax.enums;
+
+public enum StudentStatus {
+	LEFT, INACTIVE, GRADUATED, TRANSFERRED, COMPLETED, APPROVED, REJECTED, APPLIED, DELETED, ACTIVE
+}
